@@ -1,0 +1,85 @@
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-4.2.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context-4.2.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">
+   
+   
+    <http auto-config="true">
+    <intercept-url pattern="/csye6220/*" access="isAnonymous()" />
+      <intercept-url pattern="/csye6220/login**" access="isAuthenticated()"/>
+ 
+      <form-login
+         login-page='/csye6220/login'
+         default-target-url="/csye6220/mylist"
+         authentication-failure-url="/csye6220/login" />
+         
+         <form-login
+         login-page="/csye6220/login"
+         default-target-url="/csye6220/mylist"
+         authentication-failure-url="/csye6220/login" />
+ 
+      <logout logout-url="/logout" logout-success-url="/login" delete-cookies="JSESSIONID "/>
+     <csrf disabled="true"></csrf>
+    </http>
+
+	<!-- <context:component-scan base-package="edu.neu.csye6220" /> -->
+
+
+    <authentication-manager>
+        <authentication-provider>
+            <user-service>
+                <user name="admin" password="123456"  authorities="ROLE_ADMIN" />
+            </user-service>
+        </authentication-provider>
+    </authentication-manager>
+
+<beans:bean id="daoAuthenticationProvider" class="org.springframework.security.authentication.dao.DaoAuthenticationProvider">
+	<beans:property name="userDetailsService" ref="userDetailsService"></beans:property>
+</beans:bean>
+
+<beans:bean id="authenticationManager" class="org.springframework.security.authentication.ProviderManager">
+<beans:constructor-arg>
+	<beans:list>
+		<beans:ref bean="daoAuthenticationProvider"/>
+	</beans:list>
+</beans:constructor-arg>
+</beans:bean>
+
+<beans:bean id="userDetailsService" class="edu.neu.csye6220.service.UserDetailsImpl"></beans:bean>
+
+<beans:bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource">
+		<beans:property name="driverClassName" value="com.mysql.jdbc.Driver" />
+		<beans:property name="url" value="jdbc:mysql://localhost:3306/todolist" />
+		<beans:property name="username" value="root" />
+		<beans:property name="password" value="root" />
+	</beans:bean>
+
+<beans:bean id="sessionFactory" class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+     <beans:property name="dataSource" ref ="dataSource" />
+      <beans:property name="configLocation">
+      <beans:value>classpath:hibernate.cfg.xml</beans:value>
+      </beans:property>
+</beans:bean>
+
+<tx:annotation-driven/>
+<beans:bean id="transactionManager" class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+	<beans:property name="sessionFactory" ref="sessionFactory"></beans:property>
+</beans:bean>
+
+<!-- the transactional advice (what happens; see the <aop:advisor/> bean below) -->
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <!-- the transactional semantics... -->
+        <tx:attributes>
+            <!-- all methods starting with get are read-only -->
+            <tx:method name="retrieve*" read-only="true"/>
+            <!-- other methods use the default transaction settings (see below) -->
+            <tx:method name="*"/>
+        </tx:attributes>
+    </tx:advice>
+
+</beans:beans>
